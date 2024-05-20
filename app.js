@@ -6,7 +6,7 @@ app.get("/health", (req, res) => res.status(200).json({ 'we': 'are ok' }));
 
 app.get("/", (req, res) => res.type('html').send(html()));
 
-const server = app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+const server = app.listen(port, () => console.log(`Example app listening on port ${port}!; All set`));
 
 server.keepAliveTimeout = 120 * 1000;
 server.headersTimeout = 120 * 1000;
@@ -44,7 +44,7 @@ const html = () => `
         background: white;
       }
       *{
-        box-sizing: 'border-box';
+        box-sizing: border-box;
         padding: 0;
         margin: 0;
       }
