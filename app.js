@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.get("/health", (req, res) => res.status(200).json({'we': 'are ok'}));
+app.get("/health", (req, res) => res.status(200).json({ 'we': 'are ok' }));
 
 app.get("/", (req, res) => res.type('html').send(html()));
 
@@ -52,11 +52,35 @@ const html = () => `
         margin-right: -50%;
         transform: translate(-50%, -50%);
       }
+      *{
+        box-sizing: 'border-box';
+        padding: 0;
+        margin: 0;
+      }
+      
+      .container{
+        width: 60%;
+        margin: 0 auto;
+        background: wheat;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        height: 100vh;
+        justify-content: center;
+      }
+      
+      .container span{
+        font-size: 24px;
+        padding: 20px;
+      }
     </style>
   </head>
   <body>
     <section>
-      Hello from Render!
+      <div class="container">
+        <span>Hello from Render!</span>
+        <img src="https://picsum.photos/250" alt="Your daily pic">
+      </div>
     </section>
   </body>
 </html>
