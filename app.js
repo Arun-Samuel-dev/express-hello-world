@@ -43,15 +43,6 @@ const html = () => `
       body {
         background: white;
       }
-      section {
-        border-radius: 1em;
-        padding: 1em;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        margin-right: -50%;
-        transform: translate(-50%, -50%);
-      }
       *{
         box-sizing: 'border-box';
         padding: 0;
