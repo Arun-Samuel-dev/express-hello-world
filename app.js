@@ -1,79 +1,121 @@
 const express = require("express");
+const logger = require("morgan");
+const passport = require("passport");
+const session = require("express-session");
+const LocalStrategy = require("passport-local").Strategy;
+
 const app = express();
+
+const { ensureAuthenticated } = require("./passport");
+
 const port = process.env.PORT || 3001;
 
-app.get("/health", (req, res) => res.status(200).json({ 'we': 'are ok' }));
+app.use(logger("dev"));
+app.use(express.json());
 
-app.get("/", (req, res) => res.type('html').send(html()));
+const user = {
+  name: "Arun Samuel",
+  email: "arun@expensetracking.com",
+  password: "987",
+};
+const users = [user];
 
-const server = app.listen(port, () => console.log(`Example app listening on port ${port}!; All set`));
+passport.use(
+  new LocalStrategy(
+    { usernameField: "email", passwordField: "password" },
+    (userName, password, done) => {
+      const matchedUser = users.find(
+        (d) => d.email == userName && d.password == password
+      );
+      console.log({ matchedUser });
+      if (matchedUser) {
+        done(null, matchedUser);
+      } else {
+        done(null, false);
+      }
+    }
+  )
+);
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
+
+// Configure session management
+app.use(
+  session({
+    secret: "your secret",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.get("/health", (req, res) => res.status(200).json({ we: "are ok" }));
+
+app.get("/",ensureAuthenticated, function (req, res, next) {
+  // Update views
+  req.session.views = (req.session.views || 0) + 1;
+
+  // Write response
+  res.json({ views: req.session.views, "res.session": req.session });
+});
+
+app.get("/login",function (req, res, next) {
+  res.send('<h2>Welcome to expense tracker.</h2><h4>Cookin Something Cool</h2>');
+});
+
+app.get("/isLoggedin", ensureAuthenticated, function (req, res, next) {
+  res.json({ status: true, message: "You're loggedIn" });
+});
+
+app.post("/login", function (req, res, next) {
+  console.log(req.body);
+  passport.authenticate("local", (err, user, info) => {
+    console.log({ err, user, info });
+    if (!user) {
+      res.json({
+        status: false,
+        ...(info ? info : { message: "Invalid credentials" }),
+      });
+    } else {
+      req.login(user, (err) => {
+        if (err)
+          res.json({
+            status: false,
+            ...(info ? info : { message: "Error in login" }),
+          });
+        res.json({
+          status: true,
+          ...(info ? info : { message: "LoggedIn successfully" }),
+          user,
+        });
+      });
+    }
+  })(req, res, next);
+});
+
+app.post("/logout", ensureAuthenticated, function (req, res, next) {
+  req.logout(function (err) {
+    if (err) {
+      return next(err);
+    }
+    // res.redirect('/');
+    res.json({ status: true, message: "Logged out successfully" });
+  });
+});
+
+const server = app.listen(port, () =>
+  console.log(
+    `Example app listening on port ${port}!; All set; http://localhost:${port}`
+  )
+);
 
 server.keepAliveTimeout = 120 * 1000;
 server.headersTimeout = 120 * 1000;
-
-const html = () => `
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Hello from Render!</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥛</text></svg>">
-    <script>
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          disableForReducedMotion: true
-        });
-      }, 500);
-    </script>
-    <style>
-      @import url("https://p.typekit.net/p.css?s=1&k=vnd5zic&ht=tk&f=39475.39476.39477.39478.39479.39480.39481.39482&a=18673890&app=typekit&e=css");
-      @font-face {
-        font-family: "neo-sans";
-        src: url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff2"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("woff"), url("https://use.typekit.net/af/00ac0a/00000000000000003b9b2033/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3") format("opentype");
-        font-style: normal;
-        font-weight: 700;
-      }
-      html {
-        font-family: neo-sans;
-        font-weight: 700;
-        font-size: calc(62rem / 16);
-      }
-      body {
-        background: white;
-      }
-      *{
-        box-sizing: border-box;
-        padding: 0;
-        margin: 0;
-      }
-      
-      .container{
-        width: 60%;
-        margin: 0 auto;
-        background: wheat;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        height: 100vh;
-        justify-content: center;
-      }
-      
-      .container span{
-        font-size: 24px;
-        padding: 20px;
-      }
-    </style>
-  </head>
-  <body>
-    <section>
-      <div class="container">
-        <span>Hello from Render!</span>
-        <img src="https://picsum.photos/250" alt="Your daily pic">
-      </div>
-    </section>
-  </body>
-</html>
-`
